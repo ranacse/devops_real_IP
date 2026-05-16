@@ -14,7 +14,7 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v3
 
-    # ২. আজুরে লগইন করা (যে চাবিটা আমরা স্টেপ ৩-এ সেভ করেছিলাম)
+    # ২. আজুরে লগইন করা (যে চাবিটা আমরা আগে সেভ করেছিলাম)
     - name: Azure Login
       uses: azure/login@v1
       with:
@@ -33,17 +33,13 @@ jobs:
 
     # ৫. AKS ক্লাস্টারের সাথে কানেক্ট হওয়া
     - name: Set AKS Context
-      run: |
-        az aks get-credentials --resource-group devops_saif_asia --name myFinalCluster2 --overwrite-existing
+      uses: azure/aks-set-context@v3
+      with:
+        resource-group: devops_saif_asia
+        cluster-name: myFinalCluster2
 
-    # ৬. ইমেজ পুশ করার জন্য AKS-কে ACR-এর পারমিশন দেওয়া
-    - name: Attach ACR to AKS
-      run: |
-        az aks update --resource-group devops_saif_asia --name myFinalCluster2 --attach-acr devopsregistersaif2
-
-    # ৭. কুবারনেটিসে রিয়েল আইপি (LoadBalancer) দিয়ে ডিপ্লয় করা
+    # ৬. কুবারনেটিসে রিয়েল আইপি (LoadBalancer) দিয়ে ডিপ্লয় করা
     - name: Deploy to AKS
       run: |
-        # deployment.yaml ফাইলের ইমেজ ট্যাগটি ডাইনামিকলি সেট করা
         sed -i "s|\${{ github.sha }}|${{ github.sha }}|g" deployment.yaml
         kubectl apply -f deployment.yaml

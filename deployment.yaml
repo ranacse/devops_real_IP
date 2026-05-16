@@ -17,6 +17,8 @@ spec:
         image: devopsregistersaif2.azurecr.io/mywebapp:${{ github.sha }}
         ports:
         - containerPort: 80
+      imagePullSecrets:
+      - name: acr-secret
 ---
 apiVersion: v1
 kind: Service
