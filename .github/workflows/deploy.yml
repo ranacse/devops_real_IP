@@ -1,0 +1,49 @@
+name: Build and Deploy to AKS
+
+on:
+  push:
+    branches:
+      - main
+      - master
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+    # ১. গিটহাব থেকে কোড নামানো
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    # ২. আজুরে লগইন করা (যে চাবিটা আমরা স্টেপ ৩-এ সেভ করেছিলাম)
+    - name: Azure Login
+      uses: azure/login@v1
+      with:
+        creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+    # ৩. কন্টেইনার রেজিস্ট্রি (ACR)-এ লগইন করা
+    - name: Login to Azure Container Registry
+      run: |
+        az acr login --name devopsregistersaif2
+
+    # ৪. ডকার ইমেজ বিল্ড এবং আজুর রেজিস্ট্রিতে পুশ করা
+    - name: Build and Push Docker Image
+      run: |
+        docker build -t devopsregistersaif2.azurecr.io/mywebapp:${{ github.sha }} .
+        docker push devopsregistersaif2.azurecr.io/mywebapp:${{ github.sha }}
+
+    # ৫. AKS ক্লাস্টারের সাথে কানেক্ট হওয়া
+    - name: Set AKS Context
+      run: |
+        az aks get-credentials --resource-group devops_saif_asia --name myFinalCluster2 --overwrite-existing
+
+    # ৬. ইমেজ পুশ করার জন্য AKS-কে ACR-এর পারমিশন দেওয়া
+    - name: Attach ACR to AKS
+      run: |
+        az aks update --resource-group devops_saif_asia --name myFinalCluster2 --attach-acr devopsregistersaif2
+
+    # ৭. কুবারনেটিসে রিয়েল আইপি (LoadBalancer) দিয়ে ডিপ্লয় করা
+    - name: Deploy to AKS
+      run: |
+        # deployment.yaml ফাইলের ইমেজ ট্যাগটি ডাইনামিকলি সেট করা
+        sed -i "s|\${{ github.sha }}|${{ github.sha }}|g" deployment.yaml
+        kubectl apply -f deployment.yaml
