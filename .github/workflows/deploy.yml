@@ -41,5 +41,5 @@ jobs:
     # ৬. কুবারনেটিসে রিয়েল আইপি (LoadBalancer) দিয়ে ডিপ্লয় করা
     - name: Deploy to AKS
       run: |
-        sed -i "s|\${{ github.sha }}|${{ github.sha }}|g" deployment.yaml
+        sed -i 's|\${{ github.sha }}|${{ github.sha }}|g' deployment.yaml
         kubectl apply -f deployment.yaml
